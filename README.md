@@ -396,6 +396,9 @@ npx playwright test --shard=3/3 && mv reporting-labs all-shards/s3
 # One command combines them
 npx reporting-labs merge all-shards -o merged
 
+# Refresh the report with saved history plus the complete merged run
+npx reporting-labs update-history merged reporting-labs.history.json --label "merged run"
+
 # Open it
 open merged/index.html          # macOS
 # start merged/index.html       # Windows
@@ -457,7 +460,7 @@ jobs:
 
       # Keep the history file across runs so the Trend and new-vs-known
       # failures build up over time. Each shard reads the same file.
-      - uses: actions/cache@v4
+      - uses: actions/cache/restore@v4
         with:
           path: reporting-labs.history.json
           key: reporting-labs-history-${{ github.ref_name }}-${{ github.run_id }}
@@ -491,7 +494,20 @@ jobs:
           path: all-shards
           pattern: report-shard-*
 
+      - uses: actions/cache/restore@v4
+        with:
+          path: reporting-labs.history.json
+          key: reporting-labs-history-${{ github.ref_name }}-${{ github.run_id }}
+          restore-keys: |
+            reporting-labs-history-${{ github.ref_name }}-
+
       - run: npx reporting-labs merge all-shards -o merged
+      - run: npx reporting-labs update-history merged reporting-labs.history.json --label "${{ github.run_number }}"
+
+      - uses: actions/cache/save@v4
+        with:
+          path: reporting-labs.history.json
+          key: reporting-labs-history-${{ github.ref_name }}-${{ github.run_id }}
 
       # This is the artifact your team downloads and opens.
       - uses: actions/upload-artifact@v4
@@ -553,6 +569,7 @@ pipeline {
           done
         '''
         sh 'npx reporting-labs merge all-shards -o merged'
+        sh 'npx reporting-labs update-history merged reporting-labs.history.json --label "$BUILD_NUMBER"'
         archiveArtifacts artifacts: 'merged/**', allowEmptyArchive: false
       }
     }
@@ -566,7 +583,7 @@ Jenkins blocks inline JavaScript inside the HTML Publisher by default (Playwrigh
 
 - **`mv: reporting-labs: No such file or directory`.** The reporter did not run. Check `playwright.config.ts`: `reporter: [['list'], ['reporting-labs', reportingLabs]]`. Without that line, `npx playwright test` does not create the `reporting-labs/` folder.
 - **A shard reports "0 tests".** Playwright shards by spec file by default, so if you have fewer spec files than shards, some shards will be empty. Reduce the shard count, split large specs, or upgrade to Playwright 1.51+ and set `shardingMode: 'round-robin'` for per-test sharding. The merge still works either way.
-- **The Trend chart looks off after merging.** All shards read the same history file at startup, so the current run is recorded once by whichever shard writes last. On CI, cache the history file (see the GitHub Actions example above) so future runs pick it up.
+- **The Trend chart looks off after merging.** Each shard only knows its own results. After merging, run `npx reporting-labs update-history merged reporting-labs.history.json --label "build 42"`. This replaces the history in `merged/report.json` with the saved history plus the labeled current run as the latest item, regenerates `merged/index.html`, then saves the same updated history to the history file. On CI, restore the history file before the test jobs and save it after this command.
 - **`merge` says "no report.json under ...".** The folder you pointed at does not contain a shard's report. `merge` accepts either individual shard folders (each with `report.json`) or one parent folder that has many shards as subfolders. Check that `report.json` actually exists inside — the reporter writes it on every run unless you set `emitJson: false`.
 - **Attachments broken in the merged report.** Screenshots are usually embedded inline as base64, so they always work. Videos and traces live in `merged/assets/shard-N-of-M/` — the merge rewrites paths so they resolve correctly. If a video does not play, open the merged folder locally (not from a Jenkins URL that strips inline JS).
 

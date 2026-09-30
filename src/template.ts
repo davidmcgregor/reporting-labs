@@ -789,6 +789,7 @@ function graphsView(){
       chartCard('failure-categories',   'Failure categories',    'What kinds of failures are hurting the suite.',              chartFailureCategories),
       chartCard('duration-distribution','Duration distribution', 'How test durations are spread across the run.',              chartDurationHistogram),
       chartCard('trend-by-priority',    'Pass rate trend by priority', 'How each priority tier trends over the last runs.',   chartTrendByPriority),
+      chartCard('total-tests-trend',    'Total tests trend',      '', chartTotalTestsTrend),
       chartCard('owner-leaderboard',    'Owner leaderboard',      'Failures and flakes ranked by owner. Add meta({owner:...}) to see this.', chartOwnerLeaderboard),
     ));
 }
@@ -826,6 +827,29 @@ function chartOwnerLeaderboard(){
   const hasKind = { Passed:list.some(r=>r.passed>0), Flaky:list.some(r=>r.flaky>0), Failed:list.some(r=>r.failed>0), Skipped:list.some(r=>r.skipped>0) };
   const legend = legendPairs.filter(([n])=>hasKind[n]).map(([n,c],i)=>'<g transform="translate('+(labW+i*90)+','+(H-4)+')"><rect width="10" height="10" y="-9" fill="'+c+'"/><text x="14" y="0" font-size="11" fill="var(--ink-2)">'+n+'</text></g>').join('');
   return h('div',{class:'gchart-body',html:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+W+' '+(H+14)+'" width="100%">'+parts+legend+'</svg>'});
+}
+
+function chartTotalTestsTrend(){
+  const hist = data.history || [];
+  if(hist.length < 2) return null;
+  const W=520, H=240, padL=36, padR=24, padT=20, padB=36;
+  const tickStep=Math.max(1, Math.ceil(Math.max(...hist.map(e=>e.total), 1)/4));
+  const maxTotal=tickStep*4;
+  const xAt=index=>padL+index/(hist.length-1)*(W-padL-padR);
+  const yAt=total=>padT+(1-total/maxTotal)*(H-padT-padB);
+  const grid=Array.from({length:5}, (_,index)=>{
+    const total=index*tickStep;
+    return '<line x1="'+padL+'" x2="'+(W-padR)+'" y1="'+yAt(total)+'" y2="'+yAt(total)+'" stroke="var(--line)" stroke-dasharray="2 3"/><text x="'+(padL-6)+'" y="'+(yAt(total)+3)+'" text-anchor="end" font-size="10" fill="var(--ink-3)">'+total+'</text>';
+  }).join('');
+  const points=hist.map((entry,index)=>xAt(index)+','+yAt(entry.total)).join(' ');
+  const dots=hist.map((entry,index)=>'<circle cx="'+xAt(index)+'" cy="'+yAt(entry.total)+'" r="3" fill="var(--accent)" data-total="'+entry.total+'"><title>'+gEsc(runLabel(entry))+' · '+entry.total+' tests</title></circle>').join('');
+  const labelStep=Math.max(1, Math.ceil(hist.length/6));
+  const labels=hist.map((entry,index)=>{
+    const last=index===hist.length-1;
+    if(!last && (index%labelStep!==0 || hist.length-1-index<labelStep)) return '';
+    return '<text x="'+xAt(index)+'" y="'+(H-10)+'" text-anchor="'+(last?'end':index===0?'start':'middle')+'" font-size="10" fill="var(--ink-3)">'+gEsc(runLabel(entry))+'</text>';
+  }).join('');
+  return h('div',{class:'gchart-body',html:'<svg xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Total tests by run" viewBox="0 0 '+W+' '+H+'" width="100%">'+grid+'<polyline points="'+points+'" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round"/>'+dots+labels+'</svg>'});
 }
 
 function chartCard(id, title, sub, chartFn){

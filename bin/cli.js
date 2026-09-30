@@ -9,6 +9,10 @@ if (cmd === 'merge') {
   const { merge, parseArgs } = require('./merge');
   const { dirs, opts } = parseArgs(args.slice(1));
   merge(dirs, opts);
+} else if (cmd === 'update-history') {
+  const { parseArgs, updateHistory } = require('./update-history');
+  const { reportDir, historyFile, label } = parseArgs(args.slice(1));
+  updateHistory(reportDir, historyFile, label);
 } else if (cmd === 'init') {
   const js = has('--js');
   const file = path.resolve(js ? 'reporting-labs.config.js' : 'reporting-labs.config.ts');
@@ -42,6 +46,8 @@ if (cmd === 'merge') {
   npx reporting-labs init --js       same, as reporting-labs.config.js
   npx reporting-labs init --force    overwrite an existing config file
   npx reporting-labs merge <dirs>    combine several shard runs into one report (see 'merge --help')
+  npx reporting-labs update-history <report-folder> <history-file> [--label <text>]
+                                      append a completed report to run history
 
 Then in playwright.config.ts:
   import reportingLabs from './reporting-labs.config';
