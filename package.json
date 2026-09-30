@@ -39,6 +39,7 @@
     "dist",
     "bin",
     "fonts",
+    "assets/planit-logo.svg",
     "README.md",
     "LICENSE"
   ],

@@ -21,6 +21,7 @@ export const LOGO_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64
 
 export function renderHtml(data: ReportData): string {
   const json = JSON.stringify(data).replace(/<\/script/gi, '<\\/script');
+  const planitLogo = 'data:image/svg+xml;base64,' + fs.readFileSync(path.join(__dirname, '..', 'assets', 'planit-logo.svg')).toString('base64');
   const themeAttr = (data.options.theme === 'auto' ? '' : ` data-theme="${data.options.theme}"`) + ` data-palette="${data.options.palette}"`;
   return `<!doctype html>
 <html lang="en"${themeAttr}>
@@ -28,13 +29,13 @@ export function renderHtml(data: ReportData): string {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${esc(data.title)}</title>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,${encodeURIComponent(LOGO_SVG)}">
+<link rel="icon" type="image/svg+xml" href="${planitLogo}">
 ${fontCss(data.options.embedFonts)}
 <style>${CSS}${data.options.accent ? `:root{--accent:${data.options.accent}!important}` : ''}${data.options.customCss}</style>
 </head>
 <body>
 <div id="app"></div>
-<template id="rl-logo">${LOGO_SVG}</template>
+<template id="rl-logo"><img class="logo brand" src="${planitLogo}" alt="Planit"></template>
 <script id="rl-data" type="application/json">${json}</script>
 <script>${JS}</script>
 </body>
@@ -122,7 +123,7 @@ a{color:var(--accent)}
 .card.tight{padding:14px 20px}
 
 /* outcome stripe above header */
-.stripe{display:flex;height:4px} .stripe i{display:block;height:100%}
+.stripe{display:flex;height:0px} .stripe i{display:block;height:100%}
 .hdr{border-top:0}
 .hdr .ctl{display:flex;gap:6px;align-items:center}
 .hdr select.pal{padding:6px 8px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);font-size:12px;color:var(--ink-2)}
@@ -684,6 +685,36 @@ html,body{font-size:var(--fs)}
 .nav .cnt,.chip,.step .cat,.folder,.item .d,.dim .k,.wk .n,.wk-sum,.attn2 .pr,.clu2 .n small,.flk .m,.own .cnts,.ediff .lbl,.ttip .tt-h span,.tags button,.hint-kbd,.trace-how,.api-col h5,.meta .k,.kv.env dt,.apitbl th,.hm thead th,.hm td button{font-family:var(--sans)}
 .chip b,.loc,.file,.file-row,.kbd,.slow .d,.step .d,.hist .l,.wk .k,.tbl td,.kv2 dd,.kv.env dd,.logs,.txt,.err,.ediff .val,.ediff.lines,.clu2 .msg,.apitbl .u,.api-head .m,.api-head .sc,.api-head .d,.api-col pre,.badge.tag,.trend text,.tl text,.attn2 .tt .s .mono,.trace-how code{font-family:var(--mono)}
 .chip{font-family:var(--sans)} .chip b{font-weight:500}
+
+/* Planit report skin */
+:root,:root[data-palette=lab]{--radius:8px;--bg:#F4F6FA;--surface:#FFFFFF;--surface-2:#EEF1F8;--line:#DDE2EC;--line-2:#C5CCDE;--ink:#080866;--ink-2:#41445F;--ink-3:#62667E;--accent:#080866;--accent-ink:#FFFFFF;--accent-2:#080866;--accent-deep:#080866;--accent-tint:#E6F8FF;--accent-soft:#32CDFF;--band-end:#080866;--shadow:0 2px 8px rgba(8,8,102,.04);--planit-cyan:#32CDFF}
+.band{background:var(--surface);color:var(--ink);border-top:0px solid var(--planit-cyan)}
+.band::after{display:none}
+.hdr{padding:20px 28px;color:var(--ink);flex-wrap:wrap}
+.hdr h1,.hdr .proj-blk h1{color:var(--ink);letter-spacing:0}
+.hdr .proj-blk .sub,.hdr .proj-blk .sub a,.hdr .when{color:var(--ink-3)}
+.hdr .logo{width:auto;height:38px;box-shadow:none;background:none;border-radius:0}
+.hdr img.logo.brand{width:190px;max-width:190px;height:38px;padding:0;background:#FFFFFF;border-radius:0;box-shadow:none;object-fit:contain}
+.hdr .chip{background:var(--surface-2);border-color:var(--line);color:var(--ink-2);border-radius:4px}
+.hdr .chip b{color:var(--ink)}
+.hdr .btn,.hdr .tbtn,.hdr select.pal{background:var(--surface);border-color:var(--line-2);color:var(--ink);border-radius:6px}
+.hdr .btn:hover,.hdr .tbtn:hover{background:var(--accent-tint);color:var(--ink)}
+.nav{background:#080866;max-width:none;padding:0 max(28px,calc((100% - 1344px)/2))}
+.nav>div{margin-top:0}
+.nav button{border-radius:0;padding:13px 16px;color:#FFFFFF;border-bottom:3px solid transparent}
+.nav button[aria-selected=true]{background:rgba(50,205,255,.12);color:#FFFFFF;border-bottom-color:var(--planit-cyan)}
+.nav button[aria-selected=true] .cnt{background:var(--planit-cyan);color:#080866}
+.kpi.hero{background:#080866;border-radius:8px}
+.kpi.hero .mini{background:rgba(255,255,255,.2)}
+.kpi,.card,.list,.detail{border-radius:8px}
+.kpi:hover{transform:none;box-shadow:0 0 0 1px var(--planit-cyan)}
+.kpi .v,.kpi.hero .v,.detail h3{letter-spacing:0}
+.bk-tabs,.tools .seg,.bug-tools .seg{border-radius:6px}
+.tab[aria-selected=true]{border-bottom-color:var(--planit-cyan)}
+.btn.primary{background:#080866;border-color:#080866;color:#FFFFFF}
+:root[data-theme=dark][data-palette=lab]{--bg:#111225;--surface:#1B1D34;--surface-2:#252842;--line:#383C58;--line-2:#505572;--ink:#F5F7FF;--ink-2:#CCD1E5;--ink-3:#A0A8C5;--accent:#32CDFF;--accent-2:#32CDFF;--accent-tint:#153B4E;--accent-soft:#32CDFF;--shadow:none}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light])[data-palette=lab]{--bg:#111225;--surface:#1B1D34;--surface-2:#252842;--line:#383C58;--line-2:#505572;--ink:#F5F7FF;--ink-2:#CCD1E5;--ink-3:#A0A8C5;--accent:#32CDFF;--accent-2:#32CDFF;--accent-tint:#153B4E;--accent-soft:#32CDFF;--shadow:none}}
+@media(max-width:700px){.hdr{padding:16px;gap:12px}.hdr img.logo.brand{width:150px;height:32px}.hdr .ctl{margin-left:0;flex-wrap:wrap}.nav{padding:0 16px}.nav button{padding:12px}.hdr .hmeta{width:100%}}
 `;
 
 const JS = String.raw`
@@ -711,7 +742,7 @@ if(params.get('view')) state.view = params.get('view');
 
 try{ const p=localStorage.getItem('rl-palette'); if(p) document.documentElement.setAttribute('data-palette',p); const th=localStorage.getItem('rl-theme'); if(th) document.documentElement.setAttribute('data-theme',th); }catch(e){}
 const app = $('#app');
-app.append(h('div',{class:'band'}, stripe(), header(), nav()),
+app.append(h('div',{class:'band'}, header(), nav()),
   h('div',{class:'view','data-view':'overview'}, summary()),
   h('div',{class:'view','data-view':'tests'}, main()),
   h('div',{class:'view','data-view':'failures'}, h('div',{class:'view-pad'}, failuresView())),
@@ -1034,10 +1065,10 @@ function header(){
     const next=isDark()?'light':'dark'; html.setAttribute('data-theme', next); try{localStorage.setItem('rl-theme',next);}catch(e){}
   }}, '◐');
   const pal = h('select',{class:'pal','aria-label':'Palette',onchange:e=>{ html.setAttribute('data-palette',e.target.value); try{localStorage.setItem('rl-palette',e.target.value);}catch(e){} }},
-    [['lab','Blue'],['ocean','Ocean'],['ember','Ember'],['mono','Mono']].map(([v,l])=>h('option',{value:v,selected:html.getAttribute('data-palette')===v},l)));
+    [['lab','Planit'],['ocean','Ocean'],['ember','Ember'],['mono','Mono']].map(([v,l])=>h('option',{value:v,selected:html.getAttribute('data-palette')===v},l)));
   const copy = h('button',{class:'btn',onclick:e=>copyText(summaryMarkdown(),e.currentTarget,'Copied for Slack')}, 'Copy summary');
   return h('header',{class:'hdr'},
-    data.options.logo ? h('img',{class:'logo brand',src:data.options.logo,alt:''}) : h('div',{class:'logo',title:'Generated by reportingLabs','aria-label':'reportingLabs'}, document.getElementById('rl-logo').content.cloneNode(true)),
+    data.options.logo ? h('img',{class:'logo brand',src:data.options.logo,alt:''}) : document.getElementById('rl-logo').content.cloneNode(true),
     data.options.project ? h('div',{class:'proj-blk'}, h('h1',{}, data.title),
       h('div',{class:'sub'}, [data.options.project.name, data.options.project.version?'v'+data.options.project.version:null, data.options.project.team].filter(Boolean).join(' · '),
         data.options.project.url? [' · ', h('a',{href:data.options.project.url,target:'_blank',rel:'noopener'}, data.options.project.url.replace(/^https?:\/\//,''))] : null),
